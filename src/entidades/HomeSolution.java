@@ -100,32 +100,55 @@ public class HomeSolution implements IHomeSolution {
     @Override
     public void asignarResponsableEnTarea(Integer numero, String titulo) throws Exception {
         Proyecto p = proyectoOrError(numero);
-        if (estaFinalizado(numero)) throw new Exception("Proyecto finalizado");
-        Tarea t = tareaOrError(p, titulo);
-        if (t.getResponsableLegajo() != null) throw new Exception("Tarea ya asignada");
+        if (p.getFechaReal() != null) throw new Exception("Proyecto finalizado");
+        Tarea t = p.obtenerTareaPorTitulo(titulo);
+        if (t == null) throw new IllegalArgumentException("Tarea no existe");
+        if (t.getResponsableLegajo() != null) throw new IllegalArgumentException("Tarea ya asignada");
 
-        // tomar primer libre FIFO
-        Integer leg = null;
-        while (!empleadosLibres.isEmpty()) {
-            Integer cand = empleadosLibres.pollFirst();
-            Empleado e = empleadosByLegajo.get(cand);
-            if (e != null && !e.isAsignado()) {
-                leg = cand;
-                break;
-            }
-            // si no es válido, continuar
+        Integer legElegido = null;
+
+        // 1) Intento por cola FIFO / empleadosNoAsignados()
+        Object[] libres = empleadosNoAsignados();
+        if (libres != null && libres.length > 0) {
+            // tomamos el primero
+            legElegido = Integer.parseInt(libres[0].toString());
         }
-        if (leg == null) throw new Exception("No hay empleados disponibles");
 
-        // asignar
-        Empleado emp = empleadosByLegajo.get(leg);
-        t.asignarResponsable(leg);
-        emp.marcarAsignado();
-        // empleadosPorRetrasos reinsert (mantener consistencia)
-        empleadosPorRetrasos.remove(emp);
-        empleadosPorRetrasos.add(emp);
-        p.agregarEmpleadoActual(leg);
+        // 2) Fallback: buscar en empleadosByLegajo cualquier empleado no asignado
+        if (legElegido == null) {
+            for (Empleado e : empleadosByLegajo.values()) {
+                if (!e.isAsignado()) {
+                    legElegido = e.getLegajo();
+                    break;
+                }
+            }
+        }
+
+        if (legElegido == null) throw new Exception("No hay empleados disponibles");
+
+        // Obtener empleado y realizar asignación consistente
+        Empleado elegido = empleadosByLegajo.get(legElegido);
+        if (elegido == null) throw new Exception("Empleado inexistente");
+
+        // marcar asignado y mantener estructuras consistentes
+        // si usás TreeSet ordenado por nRetrasos, reinsertar para mantener invariante
+        empleadosPorRetrasos.remove(elegido);
+        elegido.marcarAsignado(); // método que setea isAsignado = true
+        empleadosPorRetrasos.add(elegido);
+
+        // remover de lista/cola de libres si corresponde
+        // empleadosNoAsignados() devuelve Object[]; actualizar la estructura real empleadosLibres
+        try {
+            empleadosLibres.remove(Integer.valueOf(elegido.getLegajo()));
+        } catch (Exception ex) {
+            // si la estructura no soporta remove por valor o ya fue removido, no interrumpe la asignación
+        }
+
+        // actualizar proyecto y tarea
+        p.agregarEmpleadoActual(elegido.getLegajo());
+        t.asignarResponsable(elegido.getLegajo());
     }
+
 
     @Override
     public void asignarResponsableMenosRetraso(Integer numero, String titulo) throws Exception {
@@ -504,7 +527,7 @@ public class HomeSolution implements IHomeSolution {
     public Proyecto obtenerProyecto(int id) {
         return proyectosById.get(id);
     }
-    
+    //Utilizados solo para testear 
     public String debugEstadoProyecto(Integer numero) {
         Proyecto p = proyectosById.get(numero);
         if (p == null) return "Proyecto no existe: " + numero;
@@ -531,6 +554,21 @@ public class HomeSolution implements IHomeSolution {
             out.add(new Tupla<>(e.getLegajo(), e.getNombre()));
         }
         return out;
+    }
+    public void imprimirEstadoEmpleados() {
+        System.out.println("=== Estado empleados ===");
+        System.out.println("empleadosByLegajo keys: " + empleadosByLegajo.keySet());
+        for (Map.Entry<Integer, Empleado> en : empleadosByLegajo.entrySet()) {
+            Empleado e = en.getValue();
+            System.out.printf("Legajo=%d Nombre=%s Asignado=%s Retrasos=%d%n",
+                e.getLegajo(), e.getNombre(), e.isAsignado(), e.getNRetrasos());
+        }
+        System.out.println("empleadosLibres (cola): " + empleadosLibres);
+        System.out.println("empleadosPorRetrasos orden (menor->mayor):");
+        for (Empleado e : empleadosPorRetrasos) {
+            System.out.printf("  %d(%s) r=%d asignado=%s%n", e.getLegajo(), e.getNombre(), e.getNRetrasos(), e.isAsignado());
+        }
+        System.out.println("========================");
     }
 
 
