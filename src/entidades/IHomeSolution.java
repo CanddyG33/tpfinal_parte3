@@ -251,4 +251,8 @@ public interface IHomeSolution {
      * @numero numero de proyecto.
      */
     public String consultarProyecto(Integer numero);
+    
+    Integer responsableDeTarea(Integer numero, String titulo);
+    List<Tupla<Integer, String>> historialEmpleadosDeProyecto(Integer numero);
+
 }
