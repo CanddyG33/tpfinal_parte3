@@ -18,13 +18,6 @@ public class Main {
         homeSolution.registrarEmpleado("Juan", 15000);
         homeSolution.registrarEmpleado("Luis", 80000, "EXPERTO");
         homeSolution.registrarEmpleado("Julieta", 15000);
-
-        // --> impresión diagnóstica antes de abrir la GUI
-        System.out.println("Empleados no asignados (antes GUI): " + Arrays.toString(homeSolution.empleadosNoAsignados()));
-
         PanelManager panelManager = new PanelManager(homeSolution);
-
-        // --> impresión diagnóstica después de crear la GUI (opcional)
-        System.out.println("Empleados no asignados (después GUI): " + Arrays.toString(homeSolution.empleadosNoAsignados()));
     }
 }

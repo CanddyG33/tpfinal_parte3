@@ -20,7 +20,7 @@ public class HomeSolutionExtraTests {
     @Test
     public void asignacionFifo_y_empleadosNoAsignados() throws Exception {
         hs.registrarEmpleado("Ana", 1000);               // legajo 100
-        hs.registrarEmpleado("Beto", 1200, "CAT");       // legajo 101
+        hs.registrarEmpleado("Beto", 1200);       // legajo 101
         String[] tit = {"T1"};
         String[] desc = {"d"};
         double[] dias = {2.0};
