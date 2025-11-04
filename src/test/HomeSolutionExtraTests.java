@@ -25,11 +25,11 @@ public class HomeSolutionExtraTests {
         String[] desc = {"d"};
         double[] dias = {2.0};
         hs.registrarProyecto(tit, desc, dias, "Calle 1", new String[]{"Cliente1"}, "2025-01-01", "2025-01-10");
-        hs.asignarResponsableEnTarea(1, "T1"); // asigna primer libre FIFO -> Ana (100)
+        hs.asignarResponsableEnTarea(1, "T1"); 
         Object[] noAsign = hs.tareasProyectoNoAsignadas(1);
         assertEquals(0, noAsign.length);
         Object[] noAsigs = hs.empleadosNoAsignados();
-        // queda Beto (101) libre; el array puede contener un único elemento 101
+      
         assertEquals(1, noAsigs.length);
         assertEquals(101, ((Number) noAsigs[0]).intValue());
     }

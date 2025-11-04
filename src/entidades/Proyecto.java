@@ -5,7 +5,7 @@ import java.util.*;
 
 public class Proyecto {
     private final int id;
-    private final String cliente; // simplificación; podés crear clase Cliente si la necesitan
+    private final String cliente; 
     private final String domicilio;
     private LocalDate fechaInicio;
     private LocalDate fechaPrevista;

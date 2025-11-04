@@ -107,14 +107,11 @@ public class HomeSolution implements IHomeSolution {
 
         Integer legElegido = null;
 
-        // 1) Intento por cola FIFO / empleadosNoAsignados()
         Object[] libres = empleadosNoAsignados();
         if (libres != null && libres.length > 0) {
-            // tomamos el primero
             legElegido = Integer.parseInt(libres[0].toString());
         }
 
-        // 2) Fallback: buscar en empleadosByLegajo cualquier empleado no asignado
         if (legElegido == null) {
             for (Empleado e : empleadosByLegajo.values()) {
                 if (!e.isAsignado()) {
@@ -126,25 +123,17 @@ public class HomeSolution implements IHomeSolution {
 
         if (legElegido == null) throw new Exception("No hay empleados disponibles");
 
-        // Obtener empleado y realizar asignación consistente
         Empleado elegido = empleadosByLegajo.get(legElegido);
         if (elegido == null) throw new Exception("Empleado inexistente");
-
-        // marcar asignado y mantener estructuras consistentes
-        // si usás TreeSet ordenado por nRetrasos, reinsertar para mantener invariante
         empleadosPorRetrasos.remove(elegido);
         elegido.marcarAsignado(); // método que setea isAsignado = true
         empleadosPorRetrasos.add(elegido);
-
-        // remover de lista/cola de libres si corresponde
-        // empleadosNoAsignados() devuelve Object[]; actualizar la estructura real empleadosLibres
         try {
             empleadosLibres.remove(Integer.valueOf(elegido.getLegajo()));
         } catch (Exception ex) {
-            // si la estructura no soporta remove por valor o ya fue removido, no interrumpe la asignación
+
         }
 
-        // actualizar proyecto y tarea
         p.agregarEmpleadoActual(elegido.getLegajo());
         t.asignarResponsable(elegido.getLegajo());
     }
@@ -172,7 +161,6 @@ public class HomeSolution implements IHomeSolution {
         // realizar asignación: marcar asignado, actualizar estructuras y la tarea
         elegido.marcarAsignado();
         empleadosLibres.remove(Integer.valueOf(elegido.getLegajo()));
-        // asegurar consistencia en la estructura ordenada (si existe): reinsertar
         empleadosPorRetrasos.remove(elegido);
         empleadosPorRetrasos.add(elegido);
 
@@ -217,7 +205,7 @@ public class HomeSolution implements IHomeSolution {
         // crear tarea con fecha prevista basada en fechaPrevista del proyecto extendida por dias
         Tarea t = new Tarea(nextTareaId++, titulo, descripcion, dias, p.getFechaPrevista().plusDays((long) Math.ceil(dias)));
         p.agregarTarea(t);
-        // actualizar fecha prevista del proyecto: por simplicidad extendemos fechaPrevista sumando dias
+        // actualizar fecha prevista del proyecto: extendemos fechaPrevista sumando dias
         p.setFechaReal(null); // proyecto ya no tiene fecha real
     }
 
@@ -246,7 +234,7 @@ public class HomeSolution implements IHomeSolution {
         // si todas finalizadas -> finalizar proyecto con fecha actual
         boolean todas = p.getTodasLasTareas().stream().allMatch(Tarea::estaFinalizada);
         if (todas) {
-            // delegar a finalizarProyecto para validaciones mínimas (pero esta firma pide String fin)
+            // delegar a finalizarProyecto para validaciones mínimas
             finalizarProyecto(numero, LocalDate.now().toString());
         }
     }
@@ -263,9 +251,9 @@ public class HomeSolution implements IHomeSolution {
             Empleado e = empleadosByLegajo.get(leg);
             if (e != null) {
                 e.marcarLibre();
-                empleadosLibres.addLast(leg);                // volver a la cola FIFO
+                empleadosLibres.addLast(leg);                
                 empleadosPorRetrasos.remove(e);
-                empleadosPorRetrasos.add(e);                 // reinsertar para mantener orden
+                empleadosPorRetrasos.add(e);                 
             }
             p.removerEmpleadoActual(leg);
         }
@@ -350,7 +338,6 @@ public class HomeSolution implements IHomeSolution {
 
         if (fechaPrevista != null) {
             if (fechaReal == null) {
-                // proyecto no finalizado: aplicar factor por defecto (tests oficiales esperan 1.35)
                 suma *= 1.35;
             } else {
                 if (fechaReal.isAfter(fechaPrevista)) suma *= 1.25;
